@@ -1,43 +1,68 @@
-export type CellValue = 'X' | 'O' | '';
+export type Player = 'X' | 'O';
+export type CellValue = Player | null;
 export type Board = CellValue[];
 
-const WIN_COMBINATIONS = [
-  [0, 1, 2], // top row
-  [3, 4, 5], // middle row
-  [6, 7, 8], // bottom row
-  [0, 3, 6], // left column
-  [1, 4, 7], // middle column
-  [2, 5, 8], // right column
-  [0, 4, 8], // diagonal top-left to bottom-right
-  [2, 4, 6], // diagonal top-right to bottom-left
+export interface WinResult {
+  winner: Player;
+  winningCells: number[];
+}
+
+export type GameState =
+  | { status: 'playing'; currentPlayer: Player }
+  | { status: 'won'; winner: Player; winningCells: number[] }
+  | { status: 'draw' };
+
+const WINNING_COMBINATIONS: number[][] = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
 ];
 
-export function checkWinner(board: Board): { winner: 'X' | 'O' | null; winningCombination: number[] | null } {
-  for (const combo of WIN_COMBINATIONS) {
-    const [a, b, c] = combo;
+export function checkWinner(board: Board): WinResult | null {
+  for (const combination of WINNING_COMBINATIONS) {
+    const [a, b, c] = combination;
     if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return { winner: board[a] as 'X' | 'O', winningCombination: combo };
+      return {
+        winner: board[a] as Player,
+        winningCells: combination,
+      };
     }
   }
-  return { winner: null, winningCombination: null };
+  return null;
 }
 
-export function checkDraw(board: Board): boolean {
-  return board.every((cell) => cell !== '') && checkWinner(board).winner === null;
+export function isDraw(board: Board): boolean {
+  return board.every((cell) => cell !== null);
 }
 
-export function isValidMove(board: Board, position: number): boolean {
-  if (position < 0 || position > 8) return false;
-  if (board[position] !== '') return false;
-  return true;
+export function getGameState(board: Board, currentPlayer: Player): GameState {
+  const winResult = checkWinner(board);
+  if (winResult) {
+    return {
+      status: 'won',
+      winner: winResult.winner,
+      winningCells: winResult.winningCells,
+    };
+  }
+  if (isDraw(board)) {
+    return { status: 'draw' };
+  }
+  return { status: 'playing', currentPlayer };
+}
+
+export function getNextPlayer(current: Player): Player {
+  return current === 'X' ? 'O' : 'X';
 }
 
 export function createEmptyBoard(): Board {
-  return ['', '', '', '', '', '', '', '', ''];
+  return Array(9).fill(null);
 }
 
-export function makeMove(board: Board, position: number, player: 'X' | 'O'): Board {
-  const newBoard = [...board];
-  newBoard[position] = player;
-  return newBoard;
+export function isValidMove(board: Board, index: number): boolean {
+  return index >= 0 && index < 9 && board[index] === null;
 }

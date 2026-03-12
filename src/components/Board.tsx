@@ -1,27 +1,35 @@
 'use client';
 
-import Square from './Square';
+import Cell from './Cell';
+import { type Board as BoardType } from '@/lib/gameLogic';
 
 interface BoardProps {
-  board: string[];
-  onSquareClick: (index: number) => void;
-  winningCombination: number[] | null;
-  disabled: boolean;
+  board: BoardType;
+  onCellClick: (index: number) => void;
+  winningCells: number[];
+  gameOver: boolean;
 }
 
-export default function Board({ board, onSquareClick, winningCombination, disabled }: BoardProps) {
+export default function Board({
+  board,
+  onCellClick,
+  winningCells,
+  gameOver,
+}: BoardProps) {
   return (
-    <div className="grid grid-cols-3 gap-3 p-4 bg-gray-100 rounded-2xl shadow-inner">
-      {board.map((value, index) => (
-        <Square
-          key={index}
-          index={index}
-          value={value}
-          onClick={() => onSquareClick(index)}
-          isWinning={winningCombination ? winningCombination.includes(index) : false}
-          disabled={disabled}
-        />
-      ))}
+    <div className="w-full">
+      <div className="grid grid-cols-3 gap-3 p-4 bg-slate-900/50 rounded-3xl border border-slate-700/50 shadow-2xl">
+        {board.map((cell, index) => (
+          <Cell
+            key={index}
+            value={cell}
+            index={index}
+            isWinning={winningCells.includes(index)}
+            isDisabled={gameOver}
+            onClick={onCellClick}
+          />
+        ))}
+      </div>
     </div>
   );
 }

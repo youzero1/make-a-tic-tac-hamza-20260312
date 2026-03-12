@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Tic Tac Toe',
-  description: 'A fun Tic Tac Toe game with game history',
+  description: 'A fully functional Tic Tac Toe game built with Next.js',
 };
 
 export default function RootLayout({
@@ -13,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        {children}
+      </body>
     </html>
   );
 }
