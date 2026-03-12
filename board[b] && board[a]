@@ -1,71 +1,165 @@
 board[c]) {
-      return {
-        winner: board[a] as Player,
-        winningCombination: combination,
-      };
+      return { winner: board[a] as Player, winningCells: [a, b, c] };
     }
   }
+  return null;
+}
 
-  // Check for draw (all cells filled, no winner)
-  const isDraw = board.every((cell) => cell !== '');
-  if (isDraw) {
+export function isBoardFull(board: Board): boolean {
+  return board.every((cell) => cell !== null);
+}
+
+export function getGameState(board: Board, nextPlayer: Player): GameState {
+  const winResult = checkWinner(board);
+  if (winResult) {
     return {
-      winner: 'draw',
-      winningCombination: null,
+      status: 'won',
+      winner: winResult.winner,
+      winningCells: winResult.winningCells,
     };
   }
-
-  // Game is still in progress
-  return {
-    winner: null,
-    winningCombination: null,
-  };
-}
-
-export function getNextPlayer(currentPlayer: Player): Player {
-  return currentPlayer === 'X' ? 'O' : 'X';
-}
-
-export function isValidMove(board: Board, position: number): boolean {
-  if (position < 0 || position > 8) return false;
-  return board[position] === '';
-}
-
-export function makeMove(board: Board, position: number, player: Player): Board {
-  if (!isValidMove(board, position)) {
-    throw new Error(`Invalid move at position ${position}`);
+  if (isBoardFull(board)) {
+    return { status: 'draw' };
   }
-  const newBoard = [...board];
-  newBoard[position] = player;
-  return newBoard;
+  return { status: 'playing', currentPlayer: nextPlayer };
 }
 </file>
 
-<file path="src/components/Square.tsx">
+<file path="src/lib/database.ts">
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
+import { Game } from '../entity/Game';
+import { GameResult } from '../entity/GameResult';
+
+let dataSource: DataSource | null = null;
+
+export async function getDataSource(): Promise<DataSource> {
+  if (dataSource && dataSource.isInitialized) {
+    return dataSource;
+  }
+
+  dataSource = new DataSource({
+    type: 'better-sqlite3',
+    database: process.env.DB_PATH || 'tictactoe.db',
+    entities: [Game, GameResult],
+    synchronize: true,
+    logging: false,
+  });
+
+  await dataSource.initialize();
+  return dataSource;
+}
+</file>
+
+<file path="src/entity/Game.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+@Entity()
+export class Game {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ type: 'text' })
+  board!: string;
+
+  @Column({ type: 'varchar', length: 1 })
+  currentPlayer!: string;
+
+  @Column({ type: 'varchar', length: 4, nullable: true })
+  winner!: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  isComplete!: boolean;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
+}
+</file>
+
+<file path="src/entity/GameResult.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
+
+@Entity()
+export class GameResult {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ type: 'varchar', length: 4 })
+  winner!: string;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+}
+</file>
+
+<file path="src/components/Board.tsx">
 'use client';
 
 import React from 'react';
+import Cell from './Cell';
+import type { Board as BoardType } from '@/lib/gameLogic';
 
-interface SquareProps {
-  value: string;
+interface BoardProps {
+  board: BoardType;
+  onCellClick: (index: number) => void;
+  winningCells: number[];
+  gameOver: boolean;
+}
+
+const Board: React.FC<BoardProps> = ({ board, onCellClick, winningCells, gameOver }) => {
+  return (
+    <div className="grid grid-cols-3 gap-2 w-full max-w-xs mx-auto aspect-square">
+      {board.map((value, index) => (
+        <Cell
+          key={index}
+          value={value}
+          index={index}
+          onClick={() => onCellClick(index)}
+          isWinning={winningCells.includes(index)}
+          disabled={gameOver || value !== null}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default Board;
+</file>
+
+<file path="src/components/Cell.tsx">
+'use client';
+
+import React from 'react';
+import type { CellValue } from '@/lib/gameLogic';
+
+interface CellProps {
+  value: CellValue;
+  index: number;
   onClick: () => void;
   isWinning: boolean;
   disabled: boolean;
 }
 
-export default function Square({ value, onClick, isWinning, disabled }: SquareProps) {
+const Cell: React.FC<CellProps> = ({ value, onClick, isWinning, disabled }) => {
   const baseClasses =
-    'w-20 h-20 sm:w-24 sm:h-24 rounded-xl text-3xl sm:text-4xl font-extrabold transition-all duration-200 flex items-center justify-center';
+    'flex items-center justify-center rounded-xl text-4xl font-bold transition-all duration-200 aspect-square select-none';
 
-  let stateClasses: string;
-  if (isWinning) {
-    stateClasses = 'bg-green-400/30 border-2 border-green-400 scale-110 shadow-lg shadow-green-400/30';
-  } else if (value === '') {
-    stateClasses = disabled
-      ? 'bg-white/5 border-2 border-white/10 cursor-not-allowed'
-      : 'bg-white/10 border-2 border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-105 cursor-pointer';
-  } else {
-    stateClasses = 'bg-white/10 border-2 border-white/20';
-  }
+  const bgClasses = isWinning
+    ? 'bg-yellow-500/30 border-2 border-yellow-400'
+    : 'bg-white/10 border-2 border-white/20 hover:bg-white/20';
 
   const textColor = value
