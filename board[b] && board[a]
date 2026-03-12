@@ -1,0 +1,71 @@
+board[c]) {
+      return {
+        winner: board[a] as Player,
+        winningCombination: combination,
+      };
+    }
+  }
+
+  // Check for draw (all cells filled, no winner)
+  const isDraw = board.every((cell) => cell !== '');
+  if (isDraw) {
+    return {
+      winner: 'draw',
+      winningCombination: null,
+    };
+  }
+
+  // Game is still in progress
+  return {
+    winner: null,
+    winningCombination: null,
+  };
+}
+
+export function getNextPlayer(currentPlayer: Player): Player {
+  return currentPlayer === 'X' ? 'O' : 'X';
+}
+
+export function isValidMove(board: Board, position: number): boolean {
+  if (position < 0 || position > 8) return false;
+  return board[position] === '';
+}
+
+export function makeMove(board: Board, position: number, player: Player): Board {
+  if (!isValidMove(board, position)) {
+    throw new Error(`Invalid move at position ${position}`);
+  }
+  const newBoard = [...board];
+  newBoard[position] = player;
+  return newBoard;
+}
+</file>
+
+<file path="src/components/Square.tsx">
+'use client';
+
+import React from 'react';
+
+interface SquareProps {
+  value: string;
+  onClick: () => void;
+  isWinning: boolean;
+  disabled: boolean;
+}
+
+export default function Square({ value, onClick, isWinning, disabled }: SquareProps) {
+  const baseClasses =
+    'w-20 h-20 sm:w-24 sm:h-24 rounded-xl text-3xl sm:text-4xl font-extrabold transition-all duration-200 flex items-center justify-center';
+
+  let stateClasses: string;
+  if (isWinning) {
+    stateClasses = 'bg-green-400/30 border-2 border-green-400 scale-110 shadow-lg shadow-green-400/30';
+  } else if (value === '') {
+    stateClasses = disabled
+      ? 'bg-white/5 border-2 border-white/10 cursor-not-allowed'
+      : 'bg-white/10 border-2 border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-105 cursor-pointer';
+  } else {
+    stateClasses = 'bg-white/10 border-2 border-white/20';
+  }
+
+  const textColor = value
