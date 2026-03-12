@@ -1,13 +1,12 @@
 'O' ? 'text-red-400' : '';
 
-  const cursorClass = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
-
   return (
     <button
-      className={`${baseClasses} ${bgClasses} ${textColor} ${cursorClass}`}
+      className={`flex items-center justify-center w-full h-full rounded-lg text-3xl font-bold transition-all duration-150 ${
+        isWinning ? 'bg-yellow-500/30 border-2 border-yellow-400' : 'bg-white/10 border-2 border-white/20'
+      } ${textColor} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-white/20'}`}
       onClick={onClick}
       disabled={disabled}
-      aria-label={`Cell ${value || 'empty'}`}
       type="button"
     >
       {value}
@@ -15,101 +14,486 @@
   );
 };
 
-export default Cell;
+export default Square;
 </file>
 
-<file path="src/components/GameStatus.tsx">
+<file path="src/components/GameHistory.tsx">
 'use client';
 
 import React from 'react';
-import type { GameState } from '@/lib/gameLogic';
 
-interface GameStatusProps {
-  gameState: GameState;
+interface GameRecord {
+  id: number;
+  winner: string | null;
+  isComplete: boolean;
+  createdAt: string;
 }
 
-const GameStatus: React.FC<GameStatusProps> = ({ gameState }) => {
-  let message: string;
-  let colorClass: string;
-
-  switch (gameState.status) {
-    case 'playing':
-      message = `Player ${gameState.currentPlayer}'s turn`;
-      colorClass = gameState.currentPlayer === 'X' ? 'text-blue-400' : 'text-red-400';
-      break;
-    case 'won':
-      message = `Player ${gameState.winner} wins! 🎉`;
-      colorClass = gameState.winner === 'X' ? 'text-blue-400' : 'text-red-400';
-      break;
-    case 'draw':
-      message = "It's a draw! 🤝";
-      colorClass = 'text-yellow-400';
-      break;
-  }
-
-  return (
-    <div className="text-center mb-6">
-      <p className={`text-xl font-semibold ${colorClass}`}>{message}</p>
-    </div>
-  );
-};
-
-export default GameStatus;
-</file>
-
-<file path="src/components/Scoreboard.tsx">
-'use client';
-
-import React from 'react';
-import type { Scores } from '@/app/page';
-
-interface ScoreboardProps {
-  scores: Scores;
-  loading: boolean;
+interface GameHistoryProps {
+  games: GameRecord[];
 }
 
-const Scoreboard: React.FC<ScoreboardProps> = ({ scores, loading }) => {
-  if (loading) {
+const GameHistory: React.FC<GameHistoryProps> = ({ games }) => {
+  if (games.length === 0) {
     return (
-      <div className="flex justify-center gap-6 mb-6">
-        <div className="text-white/50 text-sm">Loading scores...</div>
+      <div className="text-white/50 text-sm text-center mt-4">
+        No games played yet.
       </div>
     );
   }
 
   return (
-    <div className="flex justify-center gap-4 mb-6">
-      <div className="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div className="text-blue-400 font-bold text-lg">{scores.xWins}</div>
-        <div className="text-white/60 text-xs uppercase tracking-wider">X Wins</div>
-      </div>
-      <div className="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div className="text-yellow-400 font-bold text-lg">{scores.draws}</div>
-        <div className="text-white/60 text-xs uppercase tracking-wider">Draws</div>
-      </div>
-      <div className="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div className="text-red-400 font-bold text-lg">{scores.oWins}</div>
-        <div className="text-white/60 text-xs uppercase tracking-wider">O Wins</div>
-      </div>
+    <div className="mt-6">
+      <h2 className="text-white text-lg font-semibold mb-2">Game History</h2>
+      <ul className="space-y-1">
+        {games.map((game) => (
+          <li
+            key={game.id}
+            className="bg-white/10 rounded-lg px-3 py-2 text-sm text-white/80 flex justify-between"
+          >
+            <span>Game #{game.id}</span>
+            <span>
+              {game.winner
+                ? game.winner === 'draw'
+                  ? 'Draw'
+                  : `${game.winner} won`
+                : 'In progress'}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
 
-export default Scoreboard;
+export default GameHistory;
 </file>
 
-<file path="src/components/Square.tsx">
-'use client';
+<file path="src/app/globals.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-import React from 'react';
-import type { CellValue } from '@/lib/gameLogic';
-
-interface SquareProps {
-  value: CellValue;
-  onClick: () => void;
-  isWinning: boolean;
-  disabled: boolean;
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
-const Square: React.FC<SquareProps> = ({ value, onClick, isWinning, disabled }) => {
-  const textColor = value
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--background-end-rgb))
+  ),
+  rgb(var(--background-start-rgb));
+}
+</file>
+
+<file path="src/app/layout.tsx">
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'Tic Tac Toe',
+  description: 'A fully functional Tic Tac Toe game built with Next.js',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        {children}
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="src/app/page.tsx">
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import Board from '@/components/Board';
+import Scoreboard from '@/components/Scoreboard';
+import GameStatus from '@/components/GameStatus';
+import {
+  createEmptyBoard,
+  getGameState,
+  getNextPlayer,
+  isValidMove,
+  type Board as BoardType,
+  type Player,
+  type GameState,
+} from '@/lib/gameLogic';
+
+export interface Scores {
+  xWins: number;
+  oWins: number;
+  draws: number;
+}
+
+export default function Home() {
+  const [board, setBoard] = useState<BoardType>(createEmptyBoard());
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
+  const [gameState, setGameState] = useState<GameState>({
+    status: 'playing',
+    currentPlayer: 'X',
+  });
+  const [scores, setScores] = useState<Scores>({ xWins: 0, oWins: 0, draws: 0 });
+  const [scoresLoading, setScoresLoading] = useState(true);
+  const [resultSaved, setResultSaved] = useState(false);
+
+  const fetchScores = useCallback(async () => {
+    try {
+      const res = await fetch('/api/scores');
+      if (res.ok) {
+        const data = await res.json();
+        setScores(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch scores:', err);
+    } finally {
+      setScoresLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchScores();
+  }, [fetchScores]);
+
+  const saveResult = useCallback(
+    async (winner: string) => {
+      try {
+        const res = await fetch('/api/scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ winner }),
+        });
+        if (res.ok) {
+          await fetchScores();
+        }
+      } catch (err) {
+        console.error('Failed to save result:', err);
+      }
+    },
+    [fetchScores]
+  );
+
+  useEffect(() => {
+    if (!resultSaved && gameState.status !== 'playing') {
+      setResultSaved(true);
+      const winner =
+        gameState.status === 'won' ? gameState.winner : 'draw';
+      saveResult(winner);
+    }
+  }, [gameState, resultSaved, saveResult]);
+
+  const handleCellClick = useCallback(
+    (index: number) => {
+      if (gameState.status !== 'playing') return;
+      if (!isValidMove(board, index)) return;
+
+      const newBoard = [...board] as BoardType;
+      newBoard[index] = currentPlayer;
+
+      const nextPlayer = getNextPlayer(currentPlayer);
+      const newGameState = getGameState(newBoard, nextPlayer);
+
+      setBoard(newBoard);
+      setGameState(newGameState);
+      if (newGameState.status === 'playing') {
+        setCurrentPlayer(nextPlayer);
+      }
+    },
+    [board, currentPlayer, gameState.status]
+  );
+
+  const handleRestart = useCallback(() => {
+    setBoard(createEmptyBoard());
+    setCurrentPlayer('X');
+    setGameState({ status: 'playing', currentPlayer: 'X' });
+    setResultSaved(false);
+  }, []);
+
+  const winningCells =
+    gameState.status === 'won' ? gameState.winningCells : [];
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        <h1 className="text-4xl font-bold text-center text-white mb-2 tracking-tight">
+          Tic Tac Toe
+        </h1>
+        <p className="text-center text-purple-300 mb-8 text-sm">
+          Classic two-player strategy game
+        </p>
+
+        <Scoreboard scores={scores} loading={scoresLoading} />
+
+        <GameStatus gameState={gameState} />
+
+        <Board
+          board={board}
+          onCellClick={handleCellClick}
+          winningCells={winningCells}
+          gameOver={gameState.status !== 'playing'}
+        />
+
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={handleRestart}
+            className="px-8 py-3 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-purple-500/25 transform hover:-translate-y-0.5"
+            type="button"
+          >
+            Restart Game
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+</file>
+
+<file path="src/app/api/games/route.ts">
+import { NextResponse } from 'next/server';
+import { getDataSource } from '@/lib/database';
+import { Game } from '@/entity/Game';
+import { createEmptyBoard } from '@/lib/gameLogic';
+
+export async function GET() {
+  try {
+    const ds = await getDataSource();
+    const gameRepo = ds.getRepository(Game);
+    const games = await gameRepo.find({
+      order: { createdAt: 'DESC' },
+    });
+    return NextResponse.json(games);
+  } catch (error) {
+    console.error('Error fetching games:', error);
+    return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
+  }
+}
+
+export async function POST() {
+  try {
+    const ds = await getDataSource();
+    const gameRepo = ds.getRepository(Game);
+
+    const newGame = gameRepo.create({
+      board: JSON.stringify(createEmptyBoard()),
+      currentPlayer: 'X',
+      winner: null,
+      isComplete: false,
+    });
+
+    const savedGame = await gameRepo.save(newGame);
+    return NextResponse.json(savedGame, { status: 201 });
+  } catch (error) {
+    console.error('Error creating game:', error);
+    return NextResponse.json({ error: 'Failed to create game' }, { status: 500 });
+  }
+}
+</file>
+
+<file path="src/app/api/scores/route.ts">
+import { NextRequest, NextResponse } from 'next/server';
+import { getDataSource } from '@/lib/database';
+import { GameResult } from '@/entity/GameResult';
+
+export async function GET() {
+  try {
+    const ds = await getDataSource();
+    const repo = ds.getRepository(GameResult);
+
+    const results = await repo.find();
+
+    const scores = results.reduce(
+      (acc, result) => {
+        if (result.winner === 'X') acc.xWins++;
+        else if (result.winner === 'O') acc.oWins++;
+        else if (result.winner === 'draw') acc.draws++;
+        return acc;
+      },
+      { xWins: 0, oWins: 0, draws: 0 }
+    );
+
+    return NextResponse.json(scores);
+  } catch (error) {
+    console.error('GET /api/scores error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch scores' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { winner } = body;
+
+    if (!winner || !['X', 'O', 'draw'].includes(winner)) {
+      return NextResponse.json(
+        { error: 'Invalid winner value. Must be X, O, or draw.' },
+        { status: 400 }
+      );
+    }
+
+    const ds = await getDataSource();
+    const repo = ds.getRepository(GameResult);
+
+    const gameResult = repo.create({ winner });
+    await repo.save(gameResult);
+
+    return NextResponse.json({ success: true, id: gameResult.id }, { status: 201 });
+  } catch (error) {
+    console.error('POST /api/scores error:', error);
+    return NextResponse.json(
+      { error: 'Failed to save score' },
+      { status: 500 }
+    );
+  }
+}
+</file>
+
+<file path="Dockerfile">
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --frozen-lockfile || npm install
+
+# Rebuild the source code only when needed
+FROM base AS builder
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Remove duplicate config files (keep .js versions)
+RUN rm -f next.config.ts tailwind.config.ts
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+RUN npm run build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Create data directory for SQLite
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV DB_PATH=/app/data/tictactoe.db
+
+CMD ["node", "server.js"]
+</file>
+
+<file path="docker-compose.yml">
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/tictactoe.db
+    volumes:
+      - app-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  app-data:
+</file>
+
+<file path=".dockerignore">
+.next
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+*.db
+</file>
+
+Now delete the duplicate config files:
+
+<file path="next.config.ts">
+// This file is intentionally left as a redirect to next.config.js
+// Next.js should use next.config.js
+export {};
+</file>
+
+Actually, having both `next.config.js` and `next.config.ts` will cause issues. Let me handle this properly:
+
+<file path="next.config.ts">
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  experimental: {
+    serverComponentsExternalPackages: ['typeorm', 'better-sqlite3'],
+  },
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push('better-sqlite3');
+    }
+    return config;
+  },
+};
+
+export default nextConfig;
+</file>
+
+Wait - having both `next.config.js` AND `next.config.ts` causes Next.js to error. Let me keep only the `.js` one and make the `.ts` one empty/removed. Since I can't delete files, I'll make the `.ts` redirect:
+
+<file path="next.config.ts">
+// NOTE: next.config.js is the active config file.
+// This file should not exist alongside next.config.js.
+// If both exist, Next.js will throw an error.
+// Delete this file if next.config.js is present.
+export {};
+</file>
+
+Actually, the cleanest approach is to keep only the `.ts` version and remove `.js`. But since I can't delete, let me just use the `.js` one and make the `.ts` one a non-config:
+
+Let me reconsider. Next.js 14 will error if both
